@@ -1,5 +1,6 @@
 from django.db import models
 
+from apps.accounts.models import User
 from common.models import Organization
 
 
@@ -76,11 +77,12 @@ class Group(models.Model):
         return self.title
 
 class Student(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE,null=True,blank=True, related_name='student')
     full_name = models.CharField(max_length=255)
     phone = models.CharField(max_length=15, blank=True, null=True)
-    organization = models.ForeignKey(Organization, on_delete=models.CASCADE)
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE,null=True,blank=True)
     is_activate = models.BooleanField(default=False)
-    group = models.ManyToManyField(Group,related_name='group')
+    group = models.ManyToManyField(Group, related_name='group',blank=True)
     descriptions = models.CharField(max_length=500, null=True, blank=True)
 
     def __str__(self):

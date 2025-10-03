@@ -2,8 +2,7 @@ from django.contrib.auth.base_user import BaseUserManager, AbstractBaseUser
 from django.contrib.auth.models import PermissionsMixin
 from django.db import models
 
-from apps.courses.models import Group
-from common.models import Organization
+
 
 class UserManager(BaseUserManager):
     def create_user(self, username, password=None, **extra_fields):
@@ -35,6 +34,11 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_admin = models.BooleanField(default=False)
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(auto_now=True)
+    class Roles(models.TextChoices):
+        user = 'user','User'
+        student = 'student','Student'
+        teacher = 'teacher','Teacher'
+    role = models.CharField(max_length=10, choices=Roles.choices, default=Roles.user)
 
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = []
@@ -49,7 +53,3 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     def has_module_perms(self, app_label):
         return self.is_admin
-
-
-
-
