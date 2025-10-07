@@ -51,10 +51,11 @@ class Table(models.Model):
         return self.start_time.__str__() + "  " + self.end_time.__str__()
 
 class Teacher(models.Model):
+    email = models.EmailField(null=False, blank=False, unique=True)
     full_name = models.CharField(max_length=255)
     phone = models.CharField(max_length=15, blank=True, null=True)
     descriptions = models.CharField(max_length=500, null=True, blank=True)
-
+    user = models.OneToOneField('accounts.User', on_delete=models.CASCADE, null=True, blank=True)
     def __str__(self):
         return self.full_name
 
@@ -80,6 +81,7 @@ class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE,null=True,blank=True, related_name='student')
     full_name = models.CharField(max_length=255)
     phone = models.CharField(max_length=15, blank=True, null=True)
+    email = models.EmailField()
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE,null=True,blank=True)
     is_activate = models.BooleanField(default=False)
     group = models.ManyToManyField(Group, related_name='group',blank=True)

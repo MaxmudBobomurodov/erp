@@ -1,9 +1,14 @@
 from django.contrib.auth import authenticate
-from rest_framework import serializers
-
-
 from apps.accounts.models import User
 from apps.courses.models import Student
+from rest_framework import serializers
+from django.core.mail import send_mail
+from django.contrib.auth import get_user_model
+import random
+
+from apps.courses.models import Teacher
+
+
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -31,17 +36,75 @@ class StudentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Student
-        fields = '__all__'
+        fields = ['user','full_name', 'email', 'phone','role']
 
     def create(self, validated_data):
-        user_data = validated_data.pop("user", None)  # ⚡️ user bo‘lmasa None bo‘lsin
-        if user_data:
-            user = User.objects.create(**user_data, role="student")
-        else:
-            user = User.objects.create_user(
-                username=validated_data["full_name"].replace(" ", "").lower(),
-                password="12345678",
-                role="student"
-            )
-        student = Student.objects.create(user=user, **validated_data)
+        password = str(random.randint(100000,999999))
+
+        user = User.objects.create_user(
+            username=validated_data['full_name'],
+            email=validated_data['email'],
+        )
+        user.set_password(password)
+        user.save()
+
+        student = Student.objects.create(
+            user=user,
+            full_name=validated_data['full_name'],
+            email=validated_data['email'],
+            phone=validated_data['phone'],
+            role="student"
+        )
+
+        send_mail(
+            subject="Your student Account Password",
+            message=f"Hello {student.full_name}!,,your username{student.full_name} your student account password is {password}",
+            from_email="maxmudbobomurodov151@gmail.com",
+            recipient_list=[student.email],
+            fail_silently=False,
+        )
         return student
+
+
+class TeacherSerializer(serializers.ModelSerializer):
+    user = serializers.PrimaryKeyRelatedField(read_only=True)
+
+    class Meta:
+        model = Teacher
+        fields = ['user', 'full_name', 'email', 'phone', 'descriptions']
+
+    def create(self, validated_data):
+        password = str(random.randint(100000, 999999))
+
+        user = User.objects.create_user(
+            username=validated_data['full_name'],
+            email=validated_data['email'],
+            role="teacher"
+        )
+        user.set_password(password)
+        user.save()
+
+        # Teacher yaratish
+        teacher = Teacher.objects.create(
+            user=user,
+            full_name=validated_data['full_name'],
+            email=validated_data['email'],
+            descriptions=validated_data.get('descriptions', ''),
+        )
+
+        # Parolni email orqali yuborish
+        send_mail(
+            subject="Your Teacher Account Password",
+            message=(
+                f"Hello {teacher.full_name}!\n\n"
+                f"Your username: {teacher.full_name}\n"
+                f"Your password: {password}\n\n"
+                "Please change your password after first login."
+            ),
+            from_email="maxmudbobomurodov151@gmail.com",
+            recipient_list=[teacher.email],
+            fail_silently=False,
+        )
+        print('*********************************************')
+
+        return teacher

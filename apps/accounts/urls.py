@@ -1,6 +1,6 @@
 from django.urls import path
 
-from apps.accounts.other_views.users import UserListAPIView, StudentCreateAPIView
+from apps.accounts.other_views.users import UserListAPIView, StudentCreateAPIView, TeacherCreateAPIView
 from apps.accounts.views import LoginAPIView, LogoutAPIView, MyView
 
 app_name = "accounts"
@@ -11,4 +11,5 @@ urlpatterns = [
     path('auth/me/',MyView.as_view(), name='me'),
     path('users/',UserListAPIView.as_view(), name='users'),
     path('users/create/student/', StudentCreateAPIView.as_view(), name='student-create'),
+    path('users/create/teacher/', TeacherCreateAPIView.as_view(), name='teacher-create'),
 ]
