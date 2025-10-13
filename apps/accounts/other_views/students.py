@@ -1,3 +1,4 @@
+from drf_yasg import openapi
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -60,7 +61,15 @@ class GetStudentsByIdsView(APIView):
     permission_classes = [IsAuthenticated]
 
     @swagger_auto_schema(
-        responses={200: StudentSerializer(many=True)}
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                'ids': openapi.Schema(type=openapi.TYPE_ARRAY, items=openapi.Items(type=openapi.TYPE_INTEGER))
+            },
+            required=['ids']
+        ),
+        responses={200: StudentSerializer(many=True)},
+        operation_description="Get teachers by a list of IDs"
     )
     def post(self, request):
         ids = request.data.get('ids', [])

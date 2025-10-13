@@ -38,7 +38,10 @@ urlpatterns = [
    path('admin/', admin.site.urls),
    path('api/v1/', include(
       [
-         path('accounts/', include('apps.accounts.urls')),
+         path('', include('apps.accounts.urls')),
+         path('attendance/', include('apps.attendances.urls')),
+         path('courses/', include('apps.courses.urls')),
+
       ]
    )),
 
