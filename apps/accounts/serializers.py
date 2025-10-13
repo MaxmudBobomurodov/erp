@@ -3,18 +3,16 @@ from apps.accounts.models import User
 from apps.courses.models import Student
 from rest_framework import serializers
 from django.core.mail import send_mail
-from django.contrib.auth import get_user_model
 import random
 
 from apps.courses.models import Teacher
 
 
-
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'password','role']
+        fields = ['id', 'username', 'email', 'password', 'role']
+
 
 class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
@@ -31,47 +29,69 @@ class LoginSerializer(serializers.Serializer):
         else:
             raise serializers.ValidationError("Ikkala maydon ham to‘ldirilishi kerak.")
 
+
 class StudentSerializer(serializers.ModelSerializer):
-    user = UserSerializer(required=False)
+    user = UserSerializer(read_only=True)
 
     class Meta:
         model = Student
-        fields = ['user','full_name', 'email', 'phone','role']
+        fields = ['id', 'user', 'full_name', 'email', 'phone', 'organization', 'is_activate', 'descriptions']
 
     def create(self, validated_data):
-        password = str(random.randint(100000,999999))
+        full_name = validated_data.get('full_name')
+        email = validated_data.get('email')
+        phone = validated_data.get('phone')
+
+        # ⚙️ Parol yaratish
+        password = str(random.randint(100000, 999999))
+
+        # ⚙️ User yaratish
+        username = full_name.replace(" ", "_").lower()
 
         user = User.objects.create_user(
-            username=validated_data['full_name'],
-            email=validated_data['email'],
+            username=username,
+            email=email,
+            role="student"
         )
         user.set_password(password)
         user.save()
 
+        # ⚙️ Student yaratish
         student = Student.objects.create(
             user=user,
-            full_name=validated_data['full_name'],
-            email=validated_data['email'],
-            phone=validated_data['phone'],
-            role="student"
+            full_name=full_name,
+            email=email,
+            phone=phone,
+            organization=validated_data.get('organization'),
+            is_activate=validated_data.get('is_activate', False),
+            descriptions=validated_data.get('descriptions', "")
         )
 
-        send_mail(
-            subject="Your student Account Password",
-            message=f"Hello {student.full_name}!,,your username{student.full_name} your student account password is {password}",
-            from_email="maxmudbobomurodov151@gmail.com",
-            recipient_list=[student.email],
-            fail_silently=False,
-        )
+        # ⚙️ Parolni emailga yuborish
+        try:
+            send_mail(
+                subject="Your Student Account Credentials",
+                message=(
+                    f"Hello {student.full_name}!\n\n"
+                    f"Your username: {username}\n"
+                    f"Your password: {password}\n\n"
+                    "Please log in and change your password."
+                ),
+                from_email="maxmudbobomurodov151@gmail.com",
+                recipient_list=[student.email],
+                fail_silently=True,  # Email xato bo‘lsa, serializer ishlashni to‘xtatmaydi
+            )
+        except Exception as e:
+            print(f"Email error: {e}")
+
         return student
-
 
 class TeacherSerializer(serializers.ModelSerializer):
     user = serializers.PrimaryKeyRelatedField(read_only=True)
 
     class Meta:
         model = Teacher
-        fields = ['user', 'full_name', 'email', 'phone', 'descriptions']
+        fields = ['id','user', 'full_name', 'email', 'phone', 'descriptions']
 
     def create(self, validated_data):
         password = str(random.randint(100000, 999999))
@@ -108,3 +128,9 @@ class TeacherSerializer(serializers.ModelSerializer):
         print('*********************************************')
 
         return teacher
+
+class SuperuserCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'password', 'email']
+        extra_kwargs = {'password': {'write_only': True}}

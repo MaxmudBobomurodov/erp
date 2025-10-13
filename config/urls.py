@@ -16,8 +16,31 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view  # ✅ to‘g‘ri import shu
+from drf_yasg import openapi
+from rest_framework_simplejwt.views import TokenRefreshView, TokenObtainPairView
+
+schema_view = get_schema_view(
+    openapi.Info(
+        title="ERP System API",
+        default_version='v1',
+        description="ERP tizimi uchun auto-generated API hujjatlar",
+        terms_of_service="https://example.com/terms/",
+        contact=openapi.Contact(email="support@erp-system.uz"),
+        license=openapi.License(name="Proprietary License"),
+    ),
+    public=True,
+    permission_classes=[permissions.AllowAny, ]
+)
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('',include("apps.accounts.urls",namespace="accounts")),
+   path('admin/', admin.site.urls),
+   path('api/v1/', include(
+      [
+         path('accounts/', include('apps.accounts.urls')),
+      ]
+   )),
+
+   path('', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
 ]
