@@ -6,8 +6,9 @@ from drf_yasg.utils import swagger_auto_schema
 
 from .models import Attendance, AttendanceLevel
 from .serializers import AttendanceSerializer, AttendanceLevelSerializer
+from .teacher_permissions import IsTeacher
 
-# Barcha attendance larni olish
+
 class AttendanceListView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -16,19 +17,19 @@ class AttendanceListView(APIView):
         serializer = AttendanceSerializer(attendances, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-# Attendance yaratish
 class AttendanceCreateView(APIView):
     permission_classes = [IsAdminUser]
 
     @swagger_auto_schema(request_body=AttendanceSerializer)
     def post(self, request):
+        data = request.data.copy()
+        data['user'] = request.user.id
         serializer = AttendanceSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Attendance tafsiloti
 class AttendanceDetailView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -40,7 +41,6 @@ class AttendanceDetailView(APIView):
         serializer = AttendanceSerializer(attendance)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-# Attendance yangilash
 class AttendanceUpdateView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -56,7 +56,6 @@ class AttendanceUpdateView(APIView):
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Attendance o‘chirish
 class AttendanceDeleteView(APIView):
     permission_classes = [IsAdminUser]
 
@@ -68,7 +67,6 @@ class AttendanceDeleteView(APIView):
         attendance.delete()
         return Response({'message': 'Attendance deleted successfully'}, status=status.HTTP_200_OK)
 
-# Attendance level lar (statuslar)
 class AttendanceLevelListView(APIView):
     permission_classes = [IsAuthenticated]
 

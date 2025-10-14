@@ -4,7 +4,7 @@ from django.db import models
 from apps.courses.models import Group, Student
 
 
-# yuqlama darajasi
+
 class AttendanceLevel(models.Model):
 
     title = models.CharField(max_length=50)
@@ -14,7 +14,6 @@ class AttendanceLevel(models.Model):
         return self.title
 
 
-# yuqlama
 class Attendance(models.Model):
     level = models.ForeignKey(AttendanceLevel, on_delete=models.RESTRICT)
     created = models.DateTimeField(auto_now_add=True)

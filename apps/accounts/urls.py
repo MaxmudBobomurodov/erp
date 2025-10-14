@@ -6,7 +6,7 @@ from apps.accounts.other_views.teachers import TeacherListView, TeacherDetailVie
     GetTeachersByIdsView, TeacherGroupsView
 from apps.accounts.other_views.users import UserListAPIView, StudentCreateAPIView, TeacherCreateAPIView, \
     SuperuserCreateView, UserCreateView, UserDeleteView
-from apps.accounts.views import LoginAPIView, LogoutAPIView, MyView, ChangeUserPasswordView, ResetUserPasswordView, \
+from apps.accounts.views import LoginAPIView, LogoutAPIView, MyView, ChangeUserPasswordView, ResetPasswordLoggedInView, \
     VerifyOtpView, SetNewPasswordView
 
 app_name = "accounts"
@@ -19,7 +19,7 @@ urlpatterns = [
     path('users/create/student/', StudentCreateAPIView.as_view(), name='student-create'),
     path('users/create/teacher/', TeacherCreateAPIView.as_view(), name='teacher-create'),
     path('auth/change-password/', ChangeUserPasswordView.as_view(), name='change-password'),
-    path('auth/reset-password/', ResetUserPasswordView.as_view(), name='reset-password'),
+    path('auth/reset-password/', ResetPasswordLoggedInView.as_view(), name='reset-password'),
     path('auth/verify-otp/', VerifyOtpView.as_view(), name='verify-otp'),
     path('auth/set-new-password/', SetNewPasswordView.as_view(), name='set-new-password'),
     path('users/create/superuser/', SuperuserCreateView.as_view(), name='create-superuser'),

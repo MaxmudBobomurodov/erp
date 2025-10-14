@@ -4,6 +4,7 @@ from os import access
 from django.contrib.auth import authenticate
 from django.core.cache import cache
 from django.core.mail import send_mail
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -84,55 +85,84 @@ class ChangeUserPasswordView(APIView):
                         status=status.HTTP_200_OK)
 
 
-class ResetUserPasswordView(APIView):
-    permission_classes = [AllowAny]
+
+class ResetPasswordLoggedInView(APIView):
+    """
+    Login bo‘lgan foydalanuvchi uchun OTP yuboradi.
+    """
+    permission_classes = [IsAuthenticated]
 
     def post(self, request):
-        email = request.data.get('email')
-
-        try:
-            user = User.objects.get(email=email)
-        except User.DoesNotExist:
-            return Response({'error': 'User does not exist.'}, status=status.HTTP_404_NOT_FOUND)
-
+        user = request.user
         otp = str(random.randint(100000, 999999))
-        cache.set(email, otp, timeout=300)
+        cache.set(f'password_reset_{user.id}', otp, timeout=300)  # 5 daqiqa amal qiladi
+
         send_mail(
-            subject='Password Reset otp',
-            message=f'your otp password is {otp}',
+            subject='Password Reset OTP',
+            message=f'Your OTP code is {otp}',
             from_email=settings.EMAIL_HOST_USER,
-            recipient_list=[email]
+            recipient_list=[user.email],
+            fail_silently=False,
         )
-        return Response({'detail': 'Otp sent successfully to your email.'},
-                        status=status.HTTP_200_OK,)
+
+        return Response({'detail': 'OTP sent successfully to your email.'}, status=status.HTTP_200_OK)
+
 
 class VerifyOtpView(APIView):
-    permission_classes = [AllowAny]
-    def post(self, request):
-        email = request.data.get('email')
-        otp = request.data.get('otp')
+    """
+    Login bo‘lgan foydalanuvchi OTP va yangi parolni yuboradi.
+    Agar OTP to‘g‘ri bo‘lsa, parol yangilanadi.
+    """
+    permission_classes = [IsAuthenticated]
+    @swagger_auto_schema(request_body=openapi.Schema(
+        type=openapi.TYPE_OBJECT,
+        properties={
+            'otp': openapi.Schema(type=openapi.TYPE_STRING),
+            'new_password': openapi.Schema(type=openapi.TYPE_STRING),
+        }
+    ))
 
-        saved_otp = cache.get(email)
+
+    def post(self, request):
+        user = request.user
+        otp = request.data.get('otp')
+        new_password = request.data.get('new_password')
+
+        if not otp or not new_password:
+            return Response({'error': 'OTP and new password are required.'},
+                            status=status.HTTP_400_BAD_REQUEST)
+
+        saved_otp = cache.get(f'password_reset_{user.id}')
         if saved_otp is None:
-            return Response({'error': 'Invalid Otp.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Invalid or expired OTP.'}, status=status.HTTP_404_NOT_FOUND)
 
         if otp != saved_otp:
-            return Response({'error': 'Otp does not match.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'OTP does not match.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        cache.delete(email)
-        token = RefreshToken.for_user(User.objects.get(email=email))
-        return Response({'detail': 'Otp verified successfully.', 'token': str(token.access_token)},status=status.HTTP_200_OK)
+        # Parolni yangilash
+        user.set_password(new_password)
+        user.save()
+        cache.delete(f'password_reset_{user.id}')
+
+        return Response({'detail': 'OTP verified and password changed successfully.'}, status=status.HTTP_200_OK)
+
 
 class SetNewPasswordView(APIView):
+    """
+    Login bo‘lgan foydalanuvchi eski parolni tasdiqlash va yangi parolni qo‘yish uchun.
+    """
     permission_classes = [IsAuthenticated]
+
     def post(self, request):
         password = request.data.get('password')
         confirm_password = request.data.get('confirm_password')
+
         if password != confirm_password:
-            return Response({'error': 'Old password and new password are not the same.'},
+            return Response({'error': 'Password and confirm password do not match.'},
                             status=status.HTTP_400_BAD_REQUEST)
+
         user = request.user
         user.set_password(password)
         user.save()
-        print(user, password)
-        return Response({'detail': 'Password changed successfully.'},status=status.HTTP_200_OK)
+
+        return Response({'detail': 'Password changed successfully.'}, status=status.HTTP_200_OK)

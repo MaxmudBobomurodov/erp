@@ -41,6 +41,7 @@ urlpatterns = [
          path('', include('apps.accounts.urls')),
          path('attendance/', include('apps.attendances.urls')),
          path('courses/', include('apps.courses.urls')),
+         path('statistics/', include('apps.erp_statistics.urls')),
 
       ]
    )),
