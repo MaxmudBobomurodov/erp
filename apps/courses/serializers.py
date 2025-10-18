@@ -17,8 +17,8 @@ class TableTypeSerializer(serializers.ModelSerializer):
 
 
 class TableSerializer(serializers.ModelSerializer):
-    room = serializers.StringRelatedField()  # room.name ni chiqaradi
-    type = serializers.StringRelatedField()  # type.title ni chiqaradi
+    room = serializers.PrimaryKeyRelatedField(queryset=Rooms.objects.all())
+    type = serializers.PrimaryKeyRelatedField(queryset=TableType.objects.all())
     class Meta:
         model = Table
         fields = '__all__'
@@ -30,8 +30,8 @@ class RoomSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class GroupSerializer(serializers.ModelSerializer):
-    course = serializers.StringRelatedField()
-    table = serializers.StringRelatedField()
+    course = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all())
+    table = serializers.PrimaryKeyRelatedField(queryset=Table.objects.all())
 
     class Meta:
         model = Group
